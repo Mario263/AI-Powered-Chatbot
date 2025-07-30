@@ -13,11 +13,24 @@ export interface Chat {
   updatedAt: Date;
 }
 
+export type ApiProvider = 'openai' | 'anthropic' | 'openrouter' | 'custom';
+
 export interface ChatSettings {
   apiKey: string;
+  provider: ApiProvider;
+  baseUrl?: string;
   model: string;
   temperature: number;
   maxTokens: number;
+}
+
+export interface ProviderConfig {
+  id: ApiProvider;
+  name: string;
+  baseUrl: string;
+  models: string[];
+  keyPrefix: string;
+  description: string;
 }
 
 export interface ChatState {

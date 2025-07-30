@@ -56,9 +56,28 @@ export const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-export const validateApiKey = (key: string): boolean => {
+export const validateApiKey = (key: string, providerKey?: string): boolean => {
   if (!key || typeof key !== 'string') return false;
-  return key.trim().startsWith('sk-or-v1-') && key.length > 20;
+  
+  // Basic validation for any key
+  const trimmed = key.trim();
+  if (trimmed.length < 10) return false;
+  
+  // Provider-specific validation
+  if (providerKey) {
+    switch (providerKey) {
+      case 'openai':
+        return trimmed.startsWith('sk-');
+      case 'anthropic':
+        return trimmed.startsWith('sk-ant-');
+      case 'openrouter':
+        return trimmed.startsWith('sk-or-v1-');
+      default:
+        return trimmed.length > 0;
+    }
+  }
+  
+  return trimmed.length > 0;
 };
 
 export const maskApiKey = (key: string): string => {

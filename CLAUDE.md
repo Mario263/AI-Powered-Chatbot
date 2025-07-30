@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This repository contains the **Olivia Chatbot** - an AI-powered chatbot built with React and TypeScript for the Olivia Vibe Coder Challenge. The chatbot uses OpenRouter's DeepSeek V3 API for intelligent conversations.
+This repository contains the **Olivia Chatbot** - an AI-powered chatbot built with React and TypeScript for the Olivia Vibe Coder Challenge. The chatbot supports multiple AI providers (OpenAI, Anthropic, OpenRouter) for flexible, intelligent conversations.
 
 ## Development Commands
 
@@ -17,7 +17,7 @@ This repository contains the **Olivia Chatbot** - an AI-powered chatbot built wi
 ### Project Structure
 - **Frontend**: React 19 + TypeScript + Vite
 - **Styling**: Tailwind CSS v3.4.0
-- **AI Integration**: OpenRouter DeepSeek V3 API via OpenAI SDK
+- **AI Integration**: Multi-provider support (OpenAI, Anthropic, OpenRouter) via OpenAI SDK
 - **State Management**: React Context + useReducer
 
 ## Architecture Overview
@@ -41,10 +41,11 @@ This repository contains the **Olivia Chatbot** - an AI-powered chatbot built wi
 
 ## API Integration
 
-- **Model**: `deepseek/deepseek-chat-v3-0324:free`
-- **Provider**: OpenRouter (https://openrouter.ai/api/v1)
+- **Providers**: OpenAI, Anthropic, OpenRouter, and custom endpoints
+- **Default Provider**: None - user must configure on first launch
 - **Authentication**: API keys stored locally in browser localStorage
-- **Security**: Direct client-to-API communication, no server-side storage
+- **Security**: Direct client-to-provider communication, no server-side storage
+- **Dynamic Switching**: Users can change providers and models in real-time
 
 ## Development Notes
 
@@ -66,13 +67,17 @@ This repository contains the **Olivia Chatbot** - an AI-powered chatbot built wi
 ## Testing the Application
 
 1. Start dev server: `npm run dev`
-2. The app pre-configures the provided OpenRouter API key
-3. Test chat functionality immediately without manual API key setup
-4. Messages persist across browser sessions via localStorage
+2. On first launch, you'll see a setup screen requiring API key configuration
+3. Choose your preferred AI provider (OpenAI, Anthropic, or OpenRouter)
+4. Select a model and enter your API key
+5. Test chat functionality across multiple sessions
+6. Messages and settings persist across browser sessions via localStorage
 
 ## Troubleshooting
 
 - **Build issues**: Ensure config files use `.cjs` extension due to `"type": "module"` in package.json
 - **Styling issues**: Verify Tailwind v3.4.0 is installed (not v4)
-- **API errors**: Check API key format (should start with `sk-or-v1-`)
+- **API errors**: Verify API key format matches provider (OpenAI: `sk-`, Anthropic: `sk-ant-`, OpenRouter: `sk-or-v1-`)
+- **Provider issues**: Check that the selected model is available for your provider
 - **TypeScript errors**: Use `import type` for type-only imports
+- **Security**: Ensure `.env` files are in `.gitignore` to prevent key exposure

@@ -1,45 +1,63 @@
 import OpenAI from 'openai';
-import type { Message } from '../types';
-
-const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const MODEL_NAME = 'deepseek/deepseek-chat-v3-0324:free';
+import type { Message, ChatSettings } from '../types';
+import { getProviderByID } from '../config/providers';
 
 export class ChatAPI {
   private client: OpenAI | null = null;
 
-  constructor(apiKey?: string) {
-    if (apiKey) {
-      this.initializeClient(apiKey);
+  constructor() {
+    // No default initialization - require explicit setup
+  }
+
+  private initializeClient(settings: ChatSettings): void {
+    const provider = getProviderByID(settings.provider);
+    if (!provider) {
+      throw new Error(`Unsupported provider: ${settings.provider}`);
     }
+
+    const baseUrl = settings.baseUrl || provider.baseUrl;
+    
+    // Handle Anthropic differently as it uses a different SDK approach
+    if (settings.provider === 'anthropic') {
+      // For Anthropic, we'll still use OpenAI SDK but with custom headers
+      this.client = new OpenAI({
+        baseURL: baseUrl + '/v1', // Anthropic compatibility layer
+        apiKey: settings.apiKey,
+        dangerouslyAllowBrowser: true,
+        defaultHeaders: {
+          'anthropic-version': '2023-06-01',
+        },
+      });
+    } else {
+      this.client = new OpenAI({
+        baseURL: baseUrl,
+        apiKey: settings.apiKey,
+        dangerouslyAllowBrowser: true,
+      });
+    }
+
   }
 
-  private initializeClient(apiKey: string): void {
-    this.client = new OpenAI({
-      baseURL: OPENROUTER_BASE_URL,
-      apiKey,
-      dangerouslyAllowBrowser: true, // Required for browser usage
-    });
-  }
-
-  public setApiKey(apiKey: string): void {
-    this.initializeClient(apiKey);
+  public updateSettings(settings: ChatSettings): void {
+    if (!settings.apiKey) {
+      this.client = null;
+      return;
+    }
+    this.initializeClient(settings);
   }
 
   public async sendMessage(
     messages: Message[],
-    options: {
-      temperature?: number;
-      maxTokens?: number;
-      stream?: boolean;
-    } = {}
+    settings: ChatSettings
   ): Promise<string> {
     if (!this.client) {
       throw new Error('API client not initialized. Please set an API key.');
     }
 
-    try {
-      const { temperature = 0.7, maxTokens = 1000 } = options;
+    // Ensure client is initialized with current settings
+    this.updateSettings(settings);
 
+    try {
       // Convert our Message format to OpenAI format
       const openAIMessages = messages.map(msg => ({
         role: msg.role as 'user' | 'assistant',
@@ -47,10 +65,10 @@ export class ChatAPI {
       }));
 
       const completion = await this.client.chat.completions.create({
-        model: MODEL_NAME,
+        model: settings.model,
         messages: openAIMessages,
-        temperature,
-        max_tokens: maxTokens,
+        temperature: settings.temperature,
+        max_tokens: settings.maxTokens,
       });
 
       const response = completion.choices[0]?.message?.content;
@@ -80,28 +98,26 @@ export class ChatAPI {
 
   public async *sendMessageStream(
     messages: Message[],
-    options: {
-      temperature?: number;
-      maxTokens?: number;
-    } = {}
+    settings: ChatSettings
   ): AsyncGenerator<string, void, unknown> {
     if (!this.client) {
       throw new Error('API client not initialized. Please set an API key.');
     }
 
-    try {
-      const { temperature = 0.7, maxTokens = 1000 } = options;
+    // Ensure client is initialized with current settings
+    this.updateSettings(settings);
 
+    try {
       const openAIMessages = messages.map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content,
       }));
 
       const stream = await this.client.chat.completions.create({
-        model: MODEL_NAME,
+        model: settings.model,
         messages: openAIMessages,
-        temperature,
-        max_tokens: maxTokens,
+        temperature: settings.temperature,
+        max_tokens: settings.maxTokens,
         stream: true,
       });
 
@@ -122,5 +138,5 @@ export class ChatAPI {
   }
 }
 
-// Singleton instance with the provided API key
-export const chatAPI = new ChatAPI('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');
+// Singleton instance - no default initialization
+export const chatAPI = new ChatAPI();

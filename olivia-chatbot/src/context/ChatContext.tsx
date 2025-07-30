@@ -25,8 +25,9 @@ const initialState: ChatState = {
   isLoading: false,
   error: null,
   settings: {
-    apiKey: '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',
-    model: 'deepseek/deepseek-chat-v3-0324:free',
+    apiKey: '',
+    provider: 'openai',
+    model: 'gpt-4o-mini',
     temperature: 0.7,
     maxTokens: 1000,
   },
@@ -145,21 +146,19 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     const savedSettings = storage.getSettings();
     const savedChats = storage.getChats();
     const savedCurrentChatId = storage.getCurrentChatId();
-    const defaultApiKey = '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';
 
-    // Use saved API key or default one
-    const apiKeyToUse = savedApiKey || defaultApiKey;
-    dispatch({ type: 'SET_API_KEY', payload: apiKeyToUse });
-    chatAPI.setApiKey(apiKeyToUse);
-    
-    // Save the API key if it wasn't already saved
-    if (!savedApiKey) {
-      storage.setApiKey(defaultApiKey);
+    // Load saved settings and merge with defaults
+    const settingsToLoad = {
+      ...initialState.settings,
+      ...savedSettings,
+    };
+
+    // Only set API key if one was saved
+    if (savedApiKey) {
+      settingsToLoad.apiKey = savedApiKey;
     }
 
-    if (savedSettings) {
-      dispatch({ type: 'UPDATE_SETTINGS', payload: savedSettings });
-    }
+    dispatch({ type: 'UPDATE_SETTINGS', payload: settingsToLoad });
 
     if (savedChats && savedChats.length > 0) {
       const parsedChats = savedChats.map(chat => ({
@@ -199,12 +198,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     storage.setSettings(state.settings);
   }, [state.settings]);
 
-  // Update API client when API key changes
+  // Update API client when settings change
   useEffect(() => {
-    if (state.settings.apiKey) {
-      chatAPI.setApiKey(state.settings.apiKey);
-    }
-  }, [state.settings.apiKey]);
+    chatAPI.updateSettings(state.settings);
+  }, [state.settings]);
 
   // Chat management functions
   const createNewChat = (): void => {
@@ -258,10 +255,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       const chat = state.chats.find(c => c.id === currentChatId);
       const messagesForAPI = chat ? [...chat.messages, userMessage] : [userMessage];
       
-      const response = await chatAPI.sendMessage(messagesForAPI, {
-        temperature: state.settings.temperature,
-        maxTokens: state.settings.maxTokens,
-      });
+      const response = await chatAPI.sendMessage(messagesForAPI, state.settings);
 
       const assistantMessage = createMessage(response, 'assistant');
       dispatch({ type: 'ADD_MESSAGE', payload: { chatId: currentChatId, message: assistantMessage } });
