@@ -38,7 +38,7 @@ const ChatContainer: React.FC = () => {
                 {currentChat?.title || 'Olivia Chatbot'}
               </h1>
               <p className="text-sm text-gray-600">
-                Powered by DeepSeek V3 • {messages.length} messages
+                Made with ❤️ by Abhishek Sharma • {messages.length} messages
               </p>
             </div>
           </div>

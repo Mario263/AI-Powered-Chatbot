@@ -3,6 +3,7 @@ import { FiEye, FiEyeOff, FiKey, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { useChat } from '../context/ChatContext';
 import { validateApiKey, maskApiKey } from '../utils/helpers';
 import { API_PROVIDERS, getProviderByID } from '../config/providers';
+import ModelSelector from './ModelSelector';
 import type { ApiProvider } from '../types';
 
 const ApiKeyInput: React.FC = () => {
@@ -124,19 +125,13 @@ const ApiKeyInput: React.FC = () => {
       {currentProvider && (
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-2">
-            Model
+            Model Selection
           </label>
-          <select
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {currentProvider.models.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
-            ))}
-          </select>
+          <ModelSelector
+            models={currentProvider.models}
+            selectedModel={selectedModel}
+            onModelSelect={setSelectedModel}
+          />
         </div>
       )}
       
